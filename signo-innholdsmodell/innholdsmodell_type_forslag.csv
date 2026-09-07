@@ -1,0 +1,75 @@
+Innholdstype,Feltnavn,Komponent,Status,Type,Kommentar
+Artikkel,Tittel,Tekstfelt,Obligatorisk,Plain Text,Tegnbegrensning
+Artikkel,Ingress,Tekstfelt,,Plain Text,Ingen stiling
+Artikkel,Bilde,Bilde,,"Referanse til Bilde, én",Artikkelbilde
+Artikkel,Tegnspråk,Video,Uavklart,URL,Tegnspråklig versjon av innholdet. Avklare Youtube eller annet
+Artikkel,Riktekst,Riktekst,,Rich Text,"Wysiwyg, bilder fra bibliotek"
+Artikkel,Publiseringsdato,Tidspunkt,,Date/Time,"Mulighet for manuell overstyring, må kunne skjules"
+Artikkel,Faktaboks,Riktekst,,Rich Text,Har eget tittelfelt i tillegg til brødtekst. Redaktør kan velge farger fra pallett
+Artikkel,Byline,Person,,"Referanse til Person, én","Kompakt visning: minibilde, navn og tittel"
+Artikkel,Kontaktperson,Person,,"Referanse til Person, én eller flere","Utvidet visning: bilde, navn, tittel og kontaktinfo"
+Artikkel,Lenkeliste,Lenkeliste,,Strukturert (liste av lenker),Redaksjonelt styrt liste av lenker. Kun lenketekst eller lenketekst med beskrivelse
+Artikkel,Utlisting,Utlisting,,Konfigurasjon,"List ut innholdstype (artikkel, kurs, tjeneste, person, sted), filter på kategori eller sted, sortering (dato, tittel), antall, visning galleri eller liste"
+Artikkel,Kategori,Kategori,,"Referanse til Kategori, én eller flere",Grunnlag for å knytte innhold sammen
+Artikkel,CTA,CTA,,Strukturert (CTA),"Tittel, knappetekst og lenke (primær og sekundær). For eksempel ""Søk jobb i Signo"", primærdriver til stillingsoversikt, sekundær til ""Jobb hos oss"""
+Virksomhet,Tittel,Tekstfelt,Obligatorisk,Plain Text,Tegnbegrensning
+Virksomhet,Ingress,Tekstfelt,,Plain Text,Ingen stiling
+Virksomhet,Bilde,Bilde,,"Referanse til Bilde, én",
+Virksomhet,Tjenesteliste,Utlisting,,Konfigurasjon,"Innholdstype tjeneste, filter virksomhet = denne"
+Virksomhet,Tegnspråk,Video,,URL,Tegnspråklig versjon av innholdet
+Virksomhet,Riktekst,Riktekst,,Rich Text,
+Virksomhet,Kontaktperson,Person,,"Referanse til Person, én eller flere",Utvidet visning
+Virksomhet,Lenkeliste,Lenkeliste,,Strukturert (liste av lenker),Redaksjonelt styrt liste av lenker
+Virksomhet,CTA,CTA,,Strukturert (CTA),"Tittel, knappetekst og lenke (primær og sekundær). For eksempel ""Søk jobb i Signo"", primærdriver til stillingsoversikt, sekundær til ""Jobb hos oss"""
+Tjeneste,Tittel,Tekstfelt,Obligatorisk,Plain Text,Tegnbegrensning
+Tjeneste,Ingress,Tekstfelt,,Plain Text,Ingen stiling
+Tjeneste,Bilde,Bilde,,"Referanse til Bilde, én",
+Tjeneste,Tjenestebeskrivelse,Riktekst,,Rich Text,Gi en beskrivelse av tjenesten
+Tjeneste,Tegnspråk,Video,,URL,Tegnspråklig versjon av innholdet
+Tjeneste,Faktaboks,Riktekst,,Rich Text,Har eget tittelfelt i tillegg til brødtekst. Redaktør kan velge farger fra pallett
+Tjeneste,Kategori,Kategori,,"Referanse til Kategori, én eller flere",Grunnlag for kategorifilter i tjenesteoversikten
+Tjeneste,Virksomhet,Virksomhet,,"Referanse til Virksomhet, én eller flere",Grunnlag for virksomhetsfilter og tjenesteliste på virksomhet
+Tjeneste,Kontaktperson,Person,,"Referanse til Person, én eller flere",Utvidet visning
+Tjeneste,CTA,CTA,,Strukturert (CTA),"Tittel, knappetekst og lenke (primær og sekundær). For eksempel ""Søk jobb i Signo"", primærdriver til stillingsoversikt, sekundær til ""Jobb hos oss"""
+Tjeneste,Relaterte tjenester,Utlisting,,Konfigurasjon,"Innholdstype tjeneste, filter kategori = samme som denne, ekskluder denne. Tekst og bilde per tjeneste"
+Tjenesteoversikt,Tittel,Tekstfelt,,Plain Text,Tegnbegrensning
+Tjenesteoversikt,Ingress,Tekstfelt,,Plain Text,Ingen stiling
+Tjenesteoversikt,Søk,Søk og filter,,Konfigurasjon,"Fritekst. Søker i tittel, ingress og filterdata"
+Tjenesteoversikt,Filter,Søk og filter,,Konfigurasjon,"Flervalg på kategori, poststed og virksomhet. OR-logikk. Verdier hentes fra Kategori- og Virksomhet-objektene. Ikke redaksjonelt styrt"
+Tjenesteoversikt,Utlisting av tjenester,Utlisting,,Konfigurasjon,"Innholdstype tjeneste, styrt av søk og filter på siden, visning galleri eller liste"
+Søkeresultat,Tittel,Tekstfelt,,Plain Text,Statisk tekst: «Søkeresultat»
+Søkeresultat,Søkefelt,Søk og filter,,Konfigurasjon,Fritekst. Reformulere søket
+Søkeresultat,Filter,Søk og filter,,Konfigurasjon,Flervalg på innholdstype
+Søkeresultat,Sortering,Søk og filter,Uavklart,Konfigurasjon,Valgmuligheter: relevans eller dato. Relevans som default. Trenger vi å vise dette?
+Søkeresultat,Søketreff,Utlisting,,Konfigurasjon,"Alle innholdstyper, styrt av søkefelt, filter og sortering"
+Kurs,Tittel,Kursintegrasjon,,Automatisk (hentet via integrasjon),
+Kurs,Nettadresse,URL-velger,Obligatorisk,URL,"Lim inn URL, få hentet inn innhold til de øvrige feltene"
+Kurs,Ingress,Kursintegrasjon,,Automatisk (hentet via integrasjon),
+Kurs,Kursinnhold,Kursintegrasjon,,Automatisk (hentet via integrasjon),
+Kurs,Kategori,Kategori,,"Referanse til Kategori, én eller flere",Grunnlag for å knytte innhold sammen
+Forside,,,Uavklart,,Bør komme et stykke ut i prosjektet. Leverandør foreslår
+Bilde*,Bilde,Bildevelger,Obligatorisk,Assets,
+Bilde*,Bildetekst,Tekstfelt,,Plain Text,
+Bilde*,Alt-tekst,Tekstfelt,Obligatorisk,Plain Text,
+Person*,Navn,Tekstfelt,Obligatorisk,Plain Text,Innholdsobjekt uten egen side. Refereres fra artikkel og virksomhet
+Person*,Tittel,Tekstfelt,,Plain Text,Stillingstittel
+Person*,Bilde,Bilde,,"Referanse til Bilde, én",
+Person*,Kontaktinfo,Tekstfelt,,Plain Text,E-post og telefon
+Person*,Virksomhet,Virksomhet,,"Referanse til Virksomhet, én eller flere",
+Virksomhet,Gateadresse,Tekstfelt,Obligatorisk,Plain Text,
+Virksomhet,Postnummer,Tekstfelt,,Number,
+Virksomhet,Google Maps-lenke,Lenke,,URL,Kartutsnitt eller lenke — avklar hvilket
+Virksomhet,Aktiviteter,Aktivitet,,"Referanse til Aktivitet, én eller flere",Hva som fins eller skjer ved virksomheten
+Aktivitet*,Navn,Tekstfelt,Obligatorisk,Plain Text,Innholdsobjekt uten egen side. Refereres fra sted. Trolig også fra tjeneste
+Aktivitet*,Beskrivelse,Riktekst,,Rich Text,F.eks. svømmebassenget på Nordstrand
+Aktivitet*,Bilde,Bilde,,"Referanse til Bilde, én",
+Aktivitet*,Virksomhet,Virksomhet,,"Referanse til Virksomhet, én eller flere",
+Kategori*,Navn,Tekstfelt,Obligatorisk,Plain Text,Innholdsobjekt uten egen side. Brukes som filterverdi og til relaterte tjenester
+Globale elementer,Header,Globalt,,,Leverandør
+Globale elementer,Footer,Globalt,,,Leverandør
+Globale elementer,Inngang til søk,Globalt,Uavklart,Plain Text,Leverandør. Plassering avklares
+Globale elementer,Språkvelger,Globalt,Uavklart,Lightswitch,Avgjøre om siten blir tospråklig eller om tegnspråklig innhold dekker de viktigste sidene
+Globale elementer,Om oss,Globalt,Uavklart,Rich Text,Trolig egen artikkel; til da: tittel + riktekst + bilde
+Globale elementer,Historikk,Globalt,Uavklart,Rich Text,Trolig egen artikkel; til da: tittel + riktekst + bilde
+Globale elementer,CTA,Globalt,,Strukturert (CTA),"Tittel, knapptekst og lenke (primær og sekundær). For eksempel ""Søk jobb i Signo"", primærdriver til stillingsoversikt, sekundær til ""Jobb hos oss"""
+Innholdsbit*,Innholdsbit,Riktekst,,Rich Text,"En ""tom"" innholdstype uten visning til å huse gjenbrukbart innhold"

@@ -1,0 +1,1 @@
+Separate content from code

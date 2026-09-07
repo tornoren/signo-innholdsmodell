@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import Papa from "papaparse";
+import ExampleContent from "./ExampleContent";
 
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/16iXpb6OqVpb7g9E-rJ8b2_pLlyxf8Y4J_yR5z5kIcqE/edit";
 
@@ -32,12 +33,17 @@ function colorFor(index) {
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQzyY2jEw0I5MTSaFvrsCnjjjKIaQTZcmqSBtXeIYlUZUIjVL13AJ6Z97XxYVH9tOCcQNOzZaLRRVcX/pub?output=csv";
 
-async function fetchRows() {
-  const res = await fetch(`${CSV_URL}&t=${Date.now()}`, { cache: "no-store" });
+const HIERARCHY_GID = "1387799651";
+
+async function fetchCsv(url) {
+  const res = await fetch(`${url}&t=${Date.now()}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`Kunne ikke hente arket (${res.status})`);
   const text = await res.text();
-  const parsed = Papa.parse(text, { skipEmptyLines: true });
-  const data = parsed.data;
+  return Papa.parse(text, { skipEmptyLines: true }).data;
+}
+
+async function fetchRows() {
+  const data = await fetchCsv(CSV_URL);
 
   const norm = (s) => (s || "").toString().trim().toLowerCase();
   let headerIdx = data.findIndex((r) => {
@@ -74,8 +80,60 @@ async function fetchRows() {
   return rows;
 }
 
+async function fetchHierarchyRows() {
+  const data = await fetchCsv(`${CSV_URL}&gid=${HIERARCHY_GID}`);
+
+  const norm = (s) => (s || "").toString().trim().toLowerCase();
+  const headerIdx = data.findIndex((r) => r.map(norm).includes("side"));
+  if (headerIdx === -1) throw new Error("Fant ingen kolonne som heter Side i hierarki-arket");
+
+  const header = data[headerIdx].map(norm);
+  const col = (k) => header.findIndex((h) => h === k || h.startsWith(k));
+  const idx = {
+    side: col("side"),
+    morside: col("morside"),
+    sidemal: col("sidemal"),
+    funksjon: col("funksjon"),
+  };
+  const get = (row, k) => (idx[k] === -1 ? "" : (row[idx[k]] || "").toString().trim());
+
+  return data
+    .slice(headerIdx + 1)
+    .map((r) => ({
+      side: get(r, "side"),
+      morside: get(r, "morside"),
+      sidemal: get(r, "sidemal"),
+      funksjon: get(r, "funksjon"),
+    }))
+    .filter((r) => r.side);
+}
+
+function TreeNode({ node }) {
+  return (
+    <li>
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2">
+        <span className="text-[15px] font-medium text-neutral-900">{node.name}</span>
+        {node.sidemal && (
+          <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-[11px] font-normal text-neutral-500">
+            {node.sidemal}
+          </span>
+        )}
+        {node.funksjon && <span className="text-xs text-neutral-500">{node.funksjon}</span>}
+      </div>
+      {node.children.length > 0 && (
+        <ul className="mt-2 ml-3 space-y-2 border-l border-neutral-200 pl-4">
+          {node.children.map((c) => (
+            <TreeNode key={c.name} node={c} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 export default function App() {
   const [rows, setRows] = useState([]);
+  const [hierarchyRows, setHierarchyRows] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [updated, setUpdated] = useState(null);
@@ -85,8 +143,9 @@ export default function App() {
     setStatus("loading");
     setError("");
     try {
-      const r = await fetchRows();
+      const [r, h] = await Promise.all([fetchRows(), fetchHierarchyRows()]);
       setRows(r);
+      setHierarchyRows(h);
       setUpdated(new Date());
       setStatus("ready");
     } catch (e) {
@@ -129,6 +188,21 @@ export default function App() {
     return order.map((k) => ({ name: k, rows: m[k] }));
   }, [rows]);
 
+  const hierarchyTree = useMemo(() => {
+    const nodes = {};
+    hierarchyRows.forEach((r) => {
+      nodes[r.side] = { name: r.side, sidemal: r.sidemal, funksjon: r.funksjon, children: [] };
+    });
+    const roots = [];
+    hierarchyRows.forEach((r) => {
+      const node = nodes[r.side];
+      const parent = r.morside && nodes[r.morside];
+      if (parent) parent.children.push(node);
+      else roots.push(node);
+    });
+    return roots;
+  }, [hierarchyRows]);
+
   const byKomponent = useMemo(() => {
     const m = {};
     rows.forEach((r) => {
@@ -158,7 +232,7 @@ export default function App() {
     const parts = [];
     if (r.type) parts.push(`Type: ${r.type}`);
     if (r.kommentar) parts.push(r.kommentar);
-    if (uavklart(r)) parts.push("Status: uavklart");
+    if (r.status) parts.push(`Status: ${r.status}`);
     return parts.length ? parts.join("\n") : undefined;
   };
 
@@ -188,33 +262,36 @@ export default function App() {
               </a>
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-md border border-neutral-200 p-0.5 text-sm">
-              {[
-                ["sidetype", "Per sidetype"],
-                ["komponent", "Per komponent"],
-              ].map(([k, label]) => (
-                <button
-                  key={k}
-                  onClick={() => setView(k)}
-                  className={`rounded px-3 py-1.5 transition-colors ${
-                    view === k ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={load}
-              disabled={status === "loading"}
-              className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2 text-[15px] font-medium text-neutral-900 hover:bg-neutral-100 disabled:opacity-60"
-            >
-              <RefreshCw size={18} className={status === "loading" ? "animate-spin" : ""} />
-              {status === "loading" ? "Henter…" : "Oppdater"}
-            </button>
-          </div>
+          <button
+            onClick={load}
+            disabled={status === "loading"}
+            className="inline-flex items-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-2 text-[15px] font-medium text-neutral-900 hover:bg-neutral-100 disabled:opacity-60"
+          >
+            <RefreshCw size={18} className={status === "loading" ? "animate-spin" : ""} />
+            {status === "loading" ? "Henter…" : "Oppdater"}
+          </button>
         </header>
+
+        <div className="mb-8 flex gap-6 border-b border-neutral-200">
+          {[
+            ["sidetype", "Innholdstyper"],
+            ["komponent", "Komponenter"],
+            ["hierarki", "Sidehierarki"],
+            ["eksempel", "Eksempelinnhold"],
+          ].map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setView(k)}
+              className={`-mb-px border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
+                view === k
+                  ? "border-neutral-900 text-neutral-900"
+                  : "border-transparent text-neutral-500 hover:text-neutral-800"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         {status === "error" && (
           <div className="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
@@ -241,7 +318,7 @@ export default function App() {
               const names = bySidetype.map((g) => g.name);
               const objs = names.filter((n) => /\*\s*$/.test(n)).length;
               const pages = names.filter((n) => !/\*\s*$/.test(n) && !/^global/i.test(n)).length;
-              return `Innholdsmodellen består av ${pages} sidetyper og ${objs} innholdsobjekter. Objektene har ikke egen side, men opprettes én gang og brukes fra sidene.`;
+              return `Innholdsmodellen består av ${pages} sidetyper og ${objs} innholdsobjekter. Objektene har ikke egen side, men opprettes én gang og brukes fra sidene. Fargen på hvert felt viser hvilken komponent det tilhører, mens stiplede felt enten ikke er avklart ennå eller bare brukes ett sted.`;
             })()}
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -280,7 +357,10 @@ export default function App() {
 
         {rows.length > 0 && view === "komponent" && (
           <>
-          <h2 className="mb-4 text-lg font-medium">Komponenter</h2>
+          <h2 className="mb-1 text-lg font-medium">Komponenter</h2>
+          <p className="mb-5 text-sm text-neutral-600">
+            Hver farge er én gjenbrukbar komponent leverandøren må bygge — jo flere innholdstyper og felt den dekker, jo mer lønner gjenbruket seg.
+          </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {byKomponent.map((g) => {
               const c = pillStyle(g.name);
@@ -325,27 +405,24 @@ export default function App() {
           </>
         )}
 
-        {rows.length > 0 && (
-          <details className="mt-10 rounded-xl border border-neutral-200 p-4 text-sm leading-6 text-neutral-700">
-            <summary className="cursor-pointer select-none font-medium text-neutral-900">Slik leser du visningen</summary>
-            <div className="mt-3 space-y-3">
-              <p>
-                <span className="font-medium text-neutral-900">Farger.</span> Hver farge er én komponent, altså én gjenbrukbar byggekloss leverandøren må lage. Fargen bestemmes av verdien i Komponent-kolonnen i arket: felter med samme komponentnavn får samme farge, uansett hvilken innholdstype de ligger på. Skriver du et nytt komponentnavn, får det automatisk en ny farge. Tekstfelt og globale elementer er grå fordi de ikke krever en egen komponent.
-              </p>
-              <p>
-                <span className="font-medium text-neutral-900">Innholdsobjekt.</span> Kort med stiplet ramme og merkelappen «innholdsobjekt» er innhold som ikke har egen side, men som opprettes én gang og brukes fra andre sider. Person, Sted, Aktivitet og Kategori er eksempler: redaktøren velger dem fra en liste i stedet for å skrive dem inn på nytt hver gang. I arket markeres de med stjerne etter navnet, for eksempel «Sted*».
-              </p>
-              <p>
-                <span className="font-medium text-neutral-900">Stiplede felter.</span> Et felt med stiplet ramme og uten farge er noe som ikke er definert ennå, eller som bare brukes ett sted og derfor ikke er en komponent.
-              </p>
-              <p>
-                <span className="font-medium text-neutral-900">Prikk og understrek.</span> En liten prikk etter feltnavnet betyr at raden er merket «Uavklart» i Status-kolonnen. Prikket understrek betyr at feltet har type eller kommentar i arket – hold musen over for å lese den.
-              </p>
-              <p>
-                <span className="font-medium text-neutral-900">Rekkefølge.</span> Innholdstypene vises i den rekkefølgen de først dukker opp i arket. Flytt rader for å endre rekkefølgen, og trykk Oppdater.
-              </p>
-            </div>
-          </details>
+        {view === "eksempel" && <ExampleContent />}
+
+        {rows.length > 0 && view === "hierarki" && (
+          <>
+          <h2 className="mb-1 text-lg font-medium">Sidehierarki</h2>
+          <p className="mb-5 text-sm text-neutral-600">
+            Hvordan sidene henger sammen i navigasjonen, og hvilken sidemal hver side bruker.
+          </p>
+          {hierarchyTree.length > 0 ? (
+            <ul className="space-y-2">
+              {hierarchyTree.map((root) => (
+                <TreeNode key={root.name} node={root} />
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-neutral-500">Fant ingen rader i hierarki-arket.</p>
+          )}
+          </>
         )}
 
         {rows.length > 0 && (
@@ -355,7 +432,7 @@ export default function App() {
               return (
                 <span key={k} className="inline-flex items-center gap-1.5">
                   <span className="inline-block h-2.5 w-2.5 rounded-sm" style={s} />
-                  {k} · {komponenter.counts[k]}
+                  {k}
                 </span>
               );
             })}
