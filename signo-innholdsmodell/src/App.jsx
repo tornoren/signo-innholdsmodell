@@ -24,6 +24,10 @@ const PALETTE = [
 
 const NEUTRAL = ["Tekstfelt", "Standard", "Globalt"];
 
+const FEATURES = {
+  eksempelinnhold: false, // ikke klar ennå
+};
+
 function colorFor(index) {
   if (index < PALETTE.length) return PALETTE[index];
   const hue = Math.round(((index - PALETTE.length) * 137.5) % 360);
@@ -346,7 +350,7 @@ export default function App() {
             ["komponent", "Komponenter"],
             ["hierarki", "Sidehierarki"],
             ["tjenesteoversikt", "Tjenesteoversikt"],
-            ["eksempel", "Eksempelinnhold"],
+            ...(FEATURES.eksempelinnhold ? [["eksempel", "Eksempelinnhold"]] : []),
           ].map(([k, label]) => (
             <button
               key={k}
@@ -555,7 +559,7 @@ export default function App() {
           </>
         )}
 
-        {view === "eksempel" && <ExampleContent />}
+        {FEATURES.eksempelinnhold && view === "eksempel" && <ExampleContent />}
 
         {rows.length > 0 && view === "hierarki" && (
           <>
