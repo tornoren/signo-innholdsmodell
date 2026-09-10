@@ -34,6 +34,7 @@ const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQzyY2jEw0I5MTSaFvrsCnjjjKIaQTZcmqSBtXeIYlUZUIjVL13AJ6Z97XxYVH9tOCcQNOzZaLRRVcX/pub?output=csv";
 
 const HIERARCHY_GID = "1387799651";
+const TJENESTE_GID = "528600700";
 
 async function fetchCsv(url) {
   const res = await fetch(`${url}&t=${Date.now()}`, { cache: "no-store" });
@@ -108,6 +109,38 @@ async function fetchHierarchyRows() {
     .filter((r) => r.side);
 }
 
+async function fetchTjenesteRows() {
+  const data = await fetchCsv(`${CSV_URL}&gid=${TJENESTE_GID}`);
+
+  const norm = (s) => (s || "").toString().trim().toLowerCase();
+  const headerIdx = data.findIndex((r) => r.map(norm).includes("tjeneste"));
+  if (headerIdx === -1) throw new Error("Fant ingen kolonne som heter Tjeneste i tjenestelisten");
+
+  const header = data[headerIdx].map(norm);
+  const col = (k) => header.findIndex((h) => h === k || h.startsWith(k));
+  const idx = {
+    tjeneste: col("tjeneste"),
+    tjenestekategori: col("tjenestekategori"),
+    malgruppe: col("målgruppe"),
+    virksomhet: col("virksomhet"),
+    poststed: col("poststed"),
+    lenke: col("lenke"),
+  };
+  const get = (row, k) => (idx[k] === -1 ? "" : (row[idx[k]] || "").toString().trim());
+
+  return data
+    .slice(headerIdx + 1)
+    .map((r) => ({
+      tjeneste: get(r, "tjeneste"),
+      tjenestekategori: get(r, "tjenestekategori"),
+      malgruppe: get(r, "malgruppe"),
+      virksomhet: get(r, "virksomhet"),
+      poststed: get(r, "poststed"),
+      lenke: get(r, "lenke"),
+    }))
+    .filter((r) => r.tjeneste);
+}
+
 function TreeNode({ node }) {
   return (
     <li>
@@ -134,18 +167,24 @@ function TreeNode({ node }) {
 export default function App() {
   const [rows, setRows] = useState([]);
   const [hierarchyRows, setHierarchyRows] = useState([]);
+  const [tjenesteRows, setTjenesteRows] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [updated, setUpdated] = useState(null);
   const [view, setView] = useState("sidetype");
+  const [tjSok, setTjSok] = useState("");
+  const [tjKategori, setTjKategori] = useState([]);
+  const [tjPoststed, setTjPoststed] = useState([]);
+  const [tjVirksomhet, setTjVirksomhet] = useState([]);
 
   const load = async () => {
     setStatus("loading");
     setError("");
     try {
-      const [r, h] = await Promise.all([fetchRows(), fetchHierarchyRows()]);
+      const [r, h, t] = await Promise.all([fetchRows(), fetchHierarchyRows(), fetchTjenesteRows()]);
       setRows(r);
       setHierarchyRows(h);
+      setTjenesteRows(t);
       setUpdated(new Date());
       setStatus("ready");
     } catch (e) {
@@ -202,6 +241,35 @@ export default function App() {
     });
     return roots;
   }, [hierarchyRows]);
+
+  const EKSTERN = "Ekstern henvisning";
+
+  const tjenesteFacets = useMemo(() => {
+    const uniq = (vals) => [...new Set(vals.filter(Boolean))].sort((a, b) => a.localeCompare(b, "nb"));
+    return {
+      kategorier: uniq(tjenesteRows.map((r) => r.tjenestekategori)),
+      poststeder: uniq(tjenesteRows.map((r) => r.poststed)),
+      virksomheter: uniq(tjenesteRows.map((r) => r.virksomhet || EKSTERN)),
+    };
+  }, [tjenesteRows]);
+
+  const filteredTjenester = useMemo(() => {
+    const q = tjSok.trim().toLowerCase();
+    return tjenesteRows.filter((r) => {
+      if (q) {
+        const hay = `${r.tjeneste} ${r.tjenestekategori} ${r.virksomhet}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (tjKategori.length && !tjKategori.includes(r.tjenestekategori)) return false;
+      if (tjPoststed.length && !tjPoststed.includes(r.poststed)) return false;
+      if (tjVirksomhet.length && !tjVirksomhet.includes(r.virksomhet || EKSTERN)) return false;
+      return true;
+    }).sort((a, b) => a.tjeneste.localeCompare(b.tjeneste, "nb"));
+  }, [tjenesteRows, tjSok, tjKategori, tjPoststed, tjVirksomhet]);
+
+  const toggleFacet = (setFn) => (value) => {
+    setFn((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  };
 
   const byKomponent = useMemo(() => {
     const m = {};
@@ -277,6 +345,7 @@ export default function App() {
             ["sidetype", "Innholdstyper"],
             ["komponent", "Komponenter"],
             ["hierarki", "Sidehierarki"],
+            ["tjenesteoversikt", "Tjenesteoversikt"],
             ["eksempel", "Eksempelinnhold"],
           ].map(([k, label]) => (
             <button
@@ -402,6 +471,87 @@ export default function App() {
               );
             })}
           </div>
+          </>
+        )}
+
+        {rows.length > 0 && view === "tjenesteoversikt" && (
+          <>
+          <h2 className="mb-1 text-lg font-medium">Tjenesteoversikt</h2>
+          <p className="mb-5 text-sm text-neutral-600">
+            Prototype av Tjenesteoversikt-sidetypen, bygget på den reelle tjenestelisten — for å teste om søk og filter (kategori, poststed, virksomhet) faktisk fungerer.
+          </p>
+
+          <input
+            type="text"
+            value={tjSok}
+            onChange={(e) => setTjSok(e.target.value)}
+            placeholder="Søk i tjenester …"
+            className="mb-4 w-full max-w-sm rounded-md border border-neutral-300 px-3 py-2 text-[15px] placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+          />
+
+          {[
+            ["Kategori", tjenesteFacets.kategorier, tjKategori, toggleFacet(setTjKategori)],
+            ["Poststed", tjenesteFacets.poststeder, tjPoststed, toggleFacet(setTjPoststed)],
+            ["Virksomhet", tjenesteFacets.virksomheter, tjVirksomhet, toggleFacet(setTjVirksomhet)],
+          ].map(([label, options, active, toggle]) => (
+            <div key={label} className="mb-3">
+              <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-neutral-400">{label}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {options.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => toggle(opt)}
+                    className={`rounded-md px-2.5 py-1 text-xs leading-5 transition-colors ${
+                      active.includes(opt)
+                        ? "bg-neutral-900 text-white"
+                        : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <p className="mb-4 mt-5 text-sm text-neutral-500">
+            {filteredTjenester.length} av {tjenesteRows.length} tjenester
+          </p>
+
+          <ul className="space-y-2">
+            {filteredTjenester.map((r, i) => {
+              const isEkstern = !r.virksomhet && !r.poststed;
+              return (
+                <li
+                  key={i}
+                  className={`rounded-lg border px-3 py-2.5 ${isEkstern ? "border-dashed border-neutral-300 bg-neutral-50" : "border-neutral-200"}`}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    {r.lenke ? (
+                      <a
+                        href={r.lenke}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[15px] font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-2 hover:decoration-neutral-900"
+                      >
+                        {r.tjeneste}
+                      </a>
+                    ) : (
+                      <span className="text-[15px] font-medium text-neutral-900">{r.tjeneste}</span>
+                    )}
+                    {isEkstern && (
+                      <span className="rounded-full border border-neutral-300 px-2 py-0.5 text-[11px] font-normal text-neutral-500">
+                        Ekstern henvisning
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs text-neutral-500">
+                    {[r.tjenestekategori, r.malgruppe, r.virksomhet, r.poststed].filter(Boolean).join(" · ")}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
           </>
         )}
 

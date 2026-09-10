@@ -14,16 +14,14 @@ faktaboks: >-
 kategori:
   - Bolig
   - Hørselshemming
-sted:
-  - Svendsentunet
 virksomhet:
-  - Signo Conrad Svendsen senter
-kontaktperson: Erika Laska, avdelingsleder Bo ved Signo Conrad Svendsen senter
+  - Signo Conrad Svendsen senter (Oslo)
+kontaktperson: Erika Laska, avdelingsleder Bo ved Signo Conrad Svendsen senter (Oslo)
 cta:
   tittel: Jobb med noe som betyr noe
   primaer: Søk jobb i Signo
   sekundaer: Jobb hos oss
-relaterte tjenester: Automatisk liste over tjenester merket med kategorien «Bolig», eller filtrert på virksomhet = Signo Conrad Svendsen senter
+relaterte tjenester: Automatisk liste over tjenester merket med kategorien «Bolig», eller filtrert på virksomhet = Signo Conrad Svendsen senter (Oslo)
 ---
 
 Du bor i din egen bolig med personale tilgjengelig hele døgnet. Tegnspråk og tilrettelagt kommunikasjon er en naturlig del av miljøet, slik at du kan gjøre deg forstått og forstå andre — enten du bruker tegnspråk, tekniske hjelpemidler eller andre tilpasninger.
